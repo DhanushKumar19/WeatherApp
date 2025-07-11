@@ -5,20 +5,39 @@
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { HomeScreen } from './src/screens/HomeScreen';
+import { FavoritesScreen } from './src/screens/FavoritesScreen';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+export type RootStackParamList = {
+  Home: undefined;
+  Favorites: undefined;
+}
 
+const Stack = createStackNavigator<RootStackParamList>();
+
+const RootStack = () => {
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <NewAppScreen templateFileName="App.tsx" />
-    </View>
+    <Stack.Navigator initialRouteName='Home'>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen 
+        name="Favorites" 
+        component={FavoritesScreen}
+        options={{ title: 'Favorites' }} 
+      />
+    </Stack.Navigator>
   );
 }
 
+function App() {
+  return (
+    <NavigationContainer>
+      <RootStack />
+    </NavigationContainer>
+  );
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
