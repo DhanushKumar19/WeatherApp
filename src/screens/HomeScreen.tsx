@@ -3,8 +3,10 @@ import { View, Text, TextInput, StyleSheet, Button, ScrollView, useAnimatedValue
 import { RootStackParamList } from '../../App';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ForecastData, WeatherData } from '../types/weather';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { weatherApi } from '../services/weatherAPI';
+
+const DetailedWeatherModal = lazy(() => import('../components/DetailedWeatherModal'));
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -13,6 +15,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
     const [location, setLocation] = useState<string>(route.params?.location || 'Bangalore');
     const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
     const [forecast, setForecast] = useState<ForecastData | null>(null);
+    const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
 
     const fadeAnim = useAnimatedValue(0);
@@ -46,7 +49,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
             setLoading(false);
         }
         fetchWeatherForecast();
-        
+
     }, [route]);
 
     const handleSearch = async () => {
@@ -88,7 +91,8 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
             {
                 currentWeather && (
-                        <Animated.View style={[styles.weatherContainer, { opacity: fadeAnim }]}>
+                    <Animated.View style={[styles.weatherContainer, { opacity: fadeAnim }]}>
+                        <TouchableOpacity onPress={() => setModalVisible(true)}>
                             <Text style={styles.weatherCity}>{currentWeather.name}</Text>
                             <Text style={styles.weatherTemp}>
                                 {Math.round(currentWeather.main.temp)}°C
@@ -98,7 +102,8 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
                                 title="View Favorites"
                                 onPress={() => navigation.navigate('Favorites')}
                             />
-                        </Animated.View>
+                        </TouchableOpacity>
+                    </Animated.View>
                 )
             }
             {
@@ -117,6 +122,14 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
                     </View>
                 )
             }
+
+            <Suspense fallback={<Text>Loading...</Text>}>
+                <DetailedWeatherModal
+                    visible={modalVisible}
+                    weather={currentWeather}
+                    onClose={() => setModalVisible(false)}
+                />
+            </Suspense>
         </ScrollView>
     );
 };
@@ -144,7 +157,7 @@ const styles = StyleSheet.create({
         color: 'white',
         padding: 12,
         borderRadius: 8,
-        justifyContent: 'center', 
+        justifyContent: 'center',
     },
     searchButtonText: {
         color: 'white',
