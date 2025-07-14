@@ -58,7 +58,7 @@ export interface Coords {
 }
 
 export interface Location extends Coords {
-    id: String;
-    name: String;
-    country: String;
+    id: string;
+    name: string;
+    country: string;
 }
