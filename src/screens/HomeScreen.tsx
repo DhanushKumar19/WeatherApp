@@ -1,10 +1,13 @@
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { View, Text, TextInput, StyleSheet, Button, ScrollView, useAnimatedValue, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, useAnimatedValue, Animated, TouchableOpacity, Alert } from 'react-native';
 import { RootStackParamList } from '../../App';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ForecastData, WeatherData } from '../types/weather';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { weatherApi } from '../services/weatherAPI';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../store';
+import { addFavorite, saveFavorites } from '../store/favoriteSlice';
 
 const DetailedWeatherModal = lazy(() => import('../components/DetailedWeatherModal'));
 
@@ -12,13 +15,21 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
     // const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-    const [location, setLocation] = useState<string>(route.params?.location || 'Bangalore');
+    const [searchLocation, setSearchLocation] = useState<string>(route.params?.location || 'Bangalore');
     const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
     const [forecast, setForecast] = useState<ForecastData | null>(null);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
 
     const fadeAnim = useAnimatedValue(0);
+
+    const dispatch = useDispatch<AppDispatch>();
+    const locations = useSelector((state: RootState) => state.favorites.locations);
+
+    // Helper to check if a location is already a favorite
+    const isFavorite = (id: string | number) => {
+        return locations.some(fav => fav.id === id.toString());
+    };
 
     // Animation for fade-in effect
     useEffect(() => {
@@ -53,17 +64,43 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
     }, [route]);
 
     const handleSearch = async () => {
-        if (location.trim() === '') return;
+        if (searchLocation.trim() === '') return;
         setLoading(true);
         try {
-            const weatherData = await weatherApi.getCurrentWeather(location);
+            const weatherData = await weatherApi.getCurrentWeather(searchLocation);
             setCurrentWeather(weatherData);
-            const forecastData = await weatherApi.getForecast(location);
+            const forecastData = await weatherApi.getForecast(searchLocation);
             setForecast(forecastData);
         } catch (error) {
             console.error("Error fetching weather data:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddToFavorites = async () => {
+        if (currentWeather) {
+            const location = {
+                id: currentWeather.id.toString(),
+                name: currentWeather.name,
+                country: currentWeather.sys.country,
+                lat: currentWeather.coord.lat,
+                lon: currentWeather.coord.lon,
+            };
+            
+            if (!isFavorite(location.id)) {
+                dispatch(addFavorite(location));
+                await dispatch(saveFavorites([...locations, location]));
+                Alert.alert(
+                    "Success",
+                    `${currentWeather.name} has been added to favorites.`,
+                );
+            } else {
+                Alert.alert(
+                    "Already Added",
+                    `${currentWeather.name} is already in your favorites.`,
+                );
+            }
         }
     };
 
@@ -78,8 +115,8 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Enter city"
-                    value={location}
-                    onChangeText={setLocation}
+                    value={searchLocation}
+                    onChangeText={setSearchLocation}
                     onSubmitEditing={handleSearch}
                 />
                 <TouchableOpacity
@@ -94,14 +131,25 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
                     <Animated.View style={[styles.weatherContainer, { opacity: fadeAnim }]}>
                         <TouchableOpacity onPress={() => setModalVisible(true)}>
                             <Text style={styles.weatherCity}>{currentWeather.name}</Text>
-                            <Text style={styles.weatherTemp}>
-                                {Math.round(currentWeather.main.temp)}°C
-                            </Text>
-                            <Text style={styles.weatherTemp}>{currentWeather.weather[0]?.description}</Text>
-                            <Button
-                                title="View Favorites"
-                                onPress={() => navigation.navigate('Favorites')}
-                            />
+                            <Text style={styles.weatherTemp} >{Math.round(currentWeather.main.temp)}°C</Text>
+                            <TouchableOpacity
+                                style={[
+                                    styles.favoritesButton,
+                                    isFavorite(currentWeather.id) && { backgroundColor: 'gray' }
+                                ]}
+                                onPress={handleAddToFavorites}
+                                disabled={isFavorite(currentWeather.id)}
+                            >
+                                <Text style={styles.favoritesButtonText}>
+                                    {isFavorite(currentWeather.id)
+                                        ? 'Added to Favorites'
+                                        : 'Add to Favorites'}
+                                </Text>
+                            </TouchableOpacity>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.favoritesButton} onPress={() => navigation.push('Favorites')}>
+                            <Text style={styles.favoritesButtonText}>Move to Favorites</Text>
                         </TouchableOpacity>
                     </Animated.View>
                 )
@@ -179,6 +227,17 @@ const styles = StyleSheet.create({
     weatherTemp: {
         fontSize: 18,
         marginBottom: 10,
+    },
+    favoritesButton: {
+        backgroundColor: 'royalblue',
+        padding: 10,
+        borderRadius: 8,
+        marginTop: 10,
+    },
+    favoritesButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     forecastContainer: {
         backgroundColor: 'white',
