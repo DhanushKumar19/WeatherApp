@@ -5,14 +5,16 @@
  * @format
  */
 
+import { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FavoritesScreen } from './src/screens/FavoritesScreen';
-import { Provider } from 'react-redux';
-import { store } from './src/store';
+import { Provider, useDispatch } from 'react-redux';
+import { AppDispatch, store } from './src/store';
+import { loadFavorites } from './src/store/favoriteSlice';
 
 export type RootStackParamList = {
   Home: { location: string } | undefined;
@@ -32,8 +34,13 @@ const renderFavoritesButton = (navigation: StackNavigationProp<RootStackParamLis
 );
 
 const RootStack = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    dispatch(loadFavorites());
+  }, [dispatch]);
+
   return (
-    <Provider store={store}>
     <Stack.Navigator initialRouteName='Home'>
       <Stack.Screen
         name="Home"
@@ -51,15 +58,17 @@ const RootStack = () => {
         options={{ title: 'Favorites' }}
       />
     </Stack.Navigator>
-    </Provider>
   );
 }
 
 function App() {
+  // TODO: Handle Error boundary
   return (
-    <NavigationContainer>
-      <RootStack />
-    </NavigationContainer>
+    <Provider store={store}>
+      <NavigationContainer>
+        <RootStack />
+      </NavigationContainer>
+    </Provider>
   );
 }
 const styles = StyleSheet.create({

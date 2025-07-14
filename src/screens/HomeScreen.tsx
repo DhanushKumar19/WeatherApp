@@ -1,4 +1,3 @@
-import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { View, Text, TextInput, StyleSheet, ScrollView, useAnimatedValue, Animated, TouchableOpacity, Alert } from 'react-native';
 import { RootStackParamList } from '../../App';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,13 +12,13 @@ const DetailedWeatherModal = lazy(() => import('../components/DetailedWeatherMod
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
-    // const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+export const HomeScreen: React.FC<Props> = ({ route }) => {
     const [searchLocation, setSearchLocation] = useState<string>(route.params?.location || 'Bangalore');
     const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
     const [forecast, setForecast] = useState<ForecastData | null>(null);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
+    const [searching, setSearching] = useState<boolean>(false);
 
     const fadeAnim = useAnimatedValue(0);
 
@@ -47,25 +46,37 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
 
         const fetchWeather = async () => {
             setLoading(true);
-            const weatherData = await weatherApi.getCurrentWeather(location)
-            setCurrentWeather(weatherData);
-            setLoading(false);
+            try {
+                const weatherData = await weatherApi.getCurrentWeather(location);
+                setCurrentWeather(weatherData);
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+                Alert.alert("Error", "Failed to fetch weather data. Please try again.");
+            } finally {
+                setLoading(false);
+            }
         };
         fetchWeather();
 
         const fetchWeatherForecast = async () => {
             setLoading(true);
-            const forecastData = await weatherApi.getForecast(location);
-            setForecast(forecastData);
-            setLoading(false);
-        }
+            try {
+                const forecastData = await weatherApi.getForecast(location);
+                setForecast(forecastData);
+            } catch (error) {
+                console.error("Error fetching forecast data:", error);
+                Alert.alert("Error", "Failed to fetch forecast data. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
         fetchWeatherForecast();
 
-    }, [route]);
+    }, [route.params?.location]);
 
     const handleSearch = async () => {
         if (searchLocation.trim() === '') return;
-        setLoading(true);
+        setSearching(true);
         try {
             const weatherData = await weatherApi.getCurrentWeather(searchLocation);
             setCurrentWeather(weatherData);
@@ -74,7 +85,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
         } catch (error) {
             console.error("Error fetching weather data:", error);
         } finally {
-            setLoading(false);
+            setSearching(false);
         }
     };
 
@@ -87,7 +98,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
                 lat: currentWeather.coord.lat,
                 lon: currentWeather.coord.lon,
             };
-            
+
             if (!isFavorite(location.id)) {
                 dispatch(addFavorite(location));
                 await dispatch(saveFavorites([...locations, location]));
@@ -126,58 +137,60 @@ export const HomeScreen: React.FC<Props> = ({ navigation, route }) => {
                     <Text style={styles.searchButtonText}>Search</Text>
                 </TouchableOpacity>
             </View>
-            {
-                currentWeather && (
-                    <Animated.View style={[styles.weatherContainer, { opacity: fadeAnim }]}>
-                        <TouchableOpacity onPress={() => setModalVisible(true)}>
-                            <Text style={styles.weatherCity}>{currentWeather.name}</Text>
-                            <Text style={styles.weatherTemp} >{Math.round(currentWeather.main.temp)}°C</Text>
-                            <TouchableOpacity
-                                style={[
-                                    styles.favoritesButton,
-                                    isFavorite(currentWeather.id) && { backgroundColor: 'gray' }
-                                ]}
-                                onPress={handleAddToFavorites}
-                                disabled={isFavorite(currentWeather.id)}
-                            >
-                                <Text style={styles.favoritesButtonText}>
-                                    {isFavorite(currentWeather.id)
-                                        ? 'Added to Favorites'
-                                        : 'Add to Favorites'}
-                                </Text>
-                            </TouchableOpacity>
-                        </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.favoritesButton} onPress={() => navigation.push('Favorites')}>
-                            <Text style={styles.favoritesButtonText}>Move to Favorites</Text>
-                        </TouchableOpacity>
-                    </Animated.View>
-                )
-            }
             {
-                getDailyWeatherData(forecast).length > 0 && (
-                    <View style={styles.forecastContainer}>
-                        <Text style={styles.forecastTitle}>2-Day Forecast</Text>
-                        <View style={styles.forecastGrid}>
-                            {getDailyWeatherData(forecast).map((item, index) => (
-                                <View key={index} style={styles.forecastItem}>
-                                    <Text style={styles.forecastDate}>{new Date(item.dt * 1000).toLocaleDateString()}</Text>
-                                    <Text style={styles.forecastTemp}>{Math.round(item.main.temp)}°C</Text>
-                                    <Text style={styles.forecastDesc}>{item.weather[0].description}</Text>
+                loading ? <Text>Loading...</Text> :
+                    searching ? <Text>Searching...</Text> :
+                    <View>
+                        {
+                            currentWeather && (
+                                <Animated.View style={[styles.weatherContainer, { opacity: fadeAnim }]}>
+                                    <TouchableOpacity onPress={() => setModalVisible(true)}>
+                                        <Text style={styles.weatherCity}>{currentWeather.name}</Text>
+                                        <Text style={styles.weatherTemp} >{Math.round(currentWeather.main.temp)}°C</Text>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.favoritesButton,
+                                                isFavorite(currentWeather.id) && { backgroundColor: 'gray' }
+                                            ]}
+                                            onPress={handleAddToFavorites}
+                                            disabled={isFavorite(currentWeather.id)}
+                                        >
+                                            <Text style={styles.favoritesButtonText}>
+                                                {isFavorite(currentWeather.id)
+                                                    ? 'Added to Favorites'
+                                                    : 'Add to Favorites'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            )
+                        }
+                        {
+                            getDailyWeatherData(forecast).length > 0 && (
+                                <View style={styles.forecastContainer}>
+                                    <Text style={styles.forecastTitle}>2-Day Forecast</Text>
+                                    <View style={styles.forecastGrid}>
+                                        {getDailyWeatherData(forecast).map((item, index) => (
+                                            <View key={index} style={styles.forecastItem}>
+                                                <Text style={styles.forecastDate}>{new Date(item.dt * 1000).toLocaleDateString()}</Text>
+                                                <Text style={styles.forecastTemp}>{Math.round(item.main.temp)}°C</Text>
+                                                <Text style={styles.forecastDesc}>{item.weather[0].description}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
                                 </View>
-                            ))}
-                        </View>
+                            )
+                        }
+                        <Suspense fallback={<Text>Loading...</Text>}>
+                            <DetailedWeatherModal
+                                visible={modalVisible}
+                                weather={currentWeather}
+                                onClose={() => setModalVisible(false)}
+                            />
+                        </Suspense>
                     </View>
-                )
             }
-
-            <Suspense fallback={<Text>Loading...</Text>}>
-                <DetailedWeatherModal
-                    visible={modalVisible}
-                    weather={currentWeather}
-                    onClose={() => setModalVisible(false)}
-                />
-            </Suspense>
         </ScrollView>
     );
 };

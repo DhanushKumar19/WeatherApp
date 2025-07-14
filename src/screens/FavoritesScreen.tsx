@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
+        borderBottomColor: 'gray',
     },
     favoriteText: {
         fontSize: 18,
