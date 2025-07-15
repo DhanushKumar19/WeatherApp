@@ -2,7 +2,7 @@ import { View, Text, TextInput, StyleSheet, ScrollView, useAnimatedValue, Animat
 import { RootStackParamList } from '../../App';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ForecastData, WeatherData } from '../types/weather';
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useCallback, useMemo } from 'react';
 import { weatherApi } from '../services/weatherAPI';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
@@ -27,73 +27,81 @@ export const HomeScreen: React.FC<Props> = ({ route }) => {
     const dispatch = useDispatch<AppDispatch>();
     const locations = useSelector((state: RootState) => state.favorites.locations);
 
-    // Helper to check if a location is already a favorite
-    const isFavorite = (id: string | number) => {
-        return locations.some(fav => fav.id === id.toString());
+    // Load current location weather data
+    const loadCurrentLocationWeather = async () => {
+        setLoading(true);
+        setLocationError(null);
+
+        try {
+            const location = await LocationModule.getCurrentLocation();
+
+            if (!location || !location.latitude || !location.longitude) {
+                setLocationError("Could not get current location.");
+                return;
+            }
+
+            const [weatherData, forecastData] = await Promise.all([
+                weatherApi.getCurrentWeather(null, location.latitude, location.longitude),
+                weatherApi.getForecast(null, location.latitude, location.longitude)
+            ]);
+
+            setCurrentWeather(weatherData);
+            setForecast(forecastData);
+        } catch (error: any) {
+            console.error("Error fetching current location weather:", error);
+
+            const message = error.message?.toLowerCase() || "";
+            if (message.includes("permission")) {
+                setLocationError("Location permission denied. Please allow location access.");
+            } else if (message.includes("disabled")) {
+                setLocationError("Location services are disabled. Please enable location services.");
+            } else {
+                setLocationError(error.message || "Unknown error fetching location.");
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Animation for fade-in effect
-    useEffect(() => {
-        if (currentWeather) {
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 500,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [currentWeather, fadeAnim]);
-
-    useEffect(() => {
-        const location = route.params?.location;
-        if (location) {
-            const fetchWeather = async () => {
-                setLoading(true);
-                try {
-                    const weatherData = await weatherApi.getCurrentWeather(location);
-                    setCurrentWeather(weatherData);
-                } catch (error) {
-                    console.error("Error fetching weather data:", error);
-                    Alert.alert("Error", "Failed to fetch weather data. Please try again.");
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchWeather();
-
-            const fetchWeatherForecast = async () => {
-                setLoading(true);
-                try {
-                    const forecastData = await weatherApi.getForecast(location);
-                    setForecast(forecastData);
-                } catch (error) {
-                    console.error("Error fetching forecast data:", error);
-                    Alert.alert("Error", "Failed to fetch forecast data. Please try again.");
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchWeatherForecast();
-        } else {
-            loadCurrentLocationWeather();
-        }
-    }, [route?.params?.location]);
-
-    const handleSearch = async () => {
-        if (searchLocation.trim() === '') return;
-        setSearching(true);
+    // Fetch weather data based on location or coordinates
+    const fetchWeatherData = async (location: string) => {
+        setLoading(true);
         try {
-            const weatherData = await weatherApi.getCurrentWeather(searchLocation);
+            const weatherData = await weatherApi.getCurrentWeather(location);
             setCurrentWeather(weatherData);
-            const forecastData = await weatherApi.getForecast(searchLocation);
+            const forecastData = await weatherApi.getForecast(location);
             setForecast(forecastData);
         } catch (error) {
             console.error("Error fetching weather data:", error);
+            Alert.alert("Error", "Failed to fetch weather data. Please try again.");
         } finally {
-            setSearching(false);
+            setLoading(false);
         }
     };
 
-    const handleAddToFavorites = async () => {
+    const handleSearch = useCallback(
+        async () => {
+            console.log('Search Location:', searchLocation);
+            if (searchLocation.trim() === '') return;
+            setSearching(true);
+            try {
+                const weatherData = await weatherApi.getCurrentWeather(searchLocation);
+                setCurrentWeather(weatherData);
+                const forecastData = await weatherApi.getForecast(searchLocation);
+                setForecast(forecastData);
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+                Alert.alert("Error", "Failed to fetch weather data. Please check the city name and try again.");
+            } finally {
+                setSearching(false);
+            }
+        }, [searchLocation]);
+
+    const isFavorite = useCallback((id: string | number) => {
+        return locations.some(fav => fav.id === id.toString());
+    }, [locations]);
+
+    const handleAddToFavorites = useCallback(async () => {
         if (currentWeather) {
             const location = {
                 id: currentWeather.id.toString(),
@@ -117,44 +125,17 @@ export const HomeScreen: React.FC<Props> = ({ route }) => {
                 );
             }
         }
-    };
+    }, [currentWeather, dispatch, isFavorite, locations]);
 
-    const getDailyWeatherData = (forecastData: ForecastData | null): ForecastData['list'] | [] => {
-        if (!forecastData || !forecastData.list) return [];
-        return forecastData.list.filter((item, index) => index % 8 === 0).slice(1, 3);
-    };
+    const dailyWeatherData = useMemo(() => {
+        if (!forecast || !forecast.list) return [];
+        return forecast.list.filter((item, index) => index % 8 === 0).slice(1, 3);
+    }, [forecast]);
 
-    const loadCurrentLocationWeather = async () => {
-        try {
-            setLoading(true);
-            setLocationError(null);
-            const location = await LocationModule.getCurrentLocation();
-            if (location && location.latitude && location.longitude) {
-                const weatherData = await weatherApi.getCurrentWeather(null, location.latitude, location.longitude);
-                setCurrentWeather(weatherData);
-                const forecastData = await weatherApi.getForecast(null, location.latitude, location.longitude);
-                setForecast(forecastData);
-            } else {
-                setLocationError("Could not get current location.");
-            }
-        } catch (error: any) {
-            console.error("Error fetching current location weather:", error);
-            if (error.message?.includes("permission")) {
-                setLocationError("Location permission denied. Please allow location access.");
-            } else if (error.message?.toLowerCase().includes("disabled")) {
-                setLocationError("Location services are disabled. Please enable location services.");
-            } else {
-                setLocationError(error.message || "Unknown error fetching location.");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleRequestLocationPermission = async () => {
+    const handleRequestLocationPermission = useCallback(async () => {
         setLocationError(null);
         await loadCurrentLocationWeather();
-    };
+    }, []);
 
     const handleOpenLocationSettings = () => {
         if (Platform.OS === 'android') {
@@ -163,6 +144,26 @@ export const HomeScreen: React.FC<Props> = ({ route }) => {
             Linking.openURL('App-Prefs:root=Privacy&path=LOCATION');
         }
     };
+
+    // Animation for fade-in effect
+    useEffect(() => {
+        if (currentWeather) {
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [currentWeather, fadeAnim]);
+
+    useEffect(() => {
+        const location = route.params?.location;
+        if (location) {
+            fetchWeatherData(location);
+        } else {
+            loadCurrentLocationWeather();
+        }
+    }, [route?.params?.location]);
 
     return (
         <ScrollView style={styles.container}>
@@ -194,9 +195,9 @@ export const HomeScreen: React.FC<Props> = ({ route }) => {
                             <Text style={styles.searchButtonText}>Request Location Permission</Text>
                         </TouchableOpacity>
                     )}
-                    <TouchableOpacity 
-                    style={[styles.searchButton, { marginTop: 10 }]} 
-                    onPress={handleRequestLocationPermission}>
+                    <TouchableOpacity
+                        style={[styles.searchButton, { marginTop: 10 }]}
+                        onPress={loadCurrentLocationWeather}>
                         <Text style={styles.searchButtonText}>Refresh</Text>
                     </TouchableOpacity>
                 </View>
@@ -224,11 +225,11 @@ export const HomeScreen: React.FC<Props> = ({ route }) => {
                             </TouchableOpacity>
                         </Animated.View>
                     )}
-                    {getDailyWeatherData(forecast).length > 0 && (
+                    {dailyWeatherData.length > 0 && (
                         <View style={styles.forecastContainer}>
                             <Text style={styles.forecastTitle}>2-Day Forecast</Text>
                             <View style={styles.forecastGrid}>
-                                {getDailyWeatherData(forecast).map((item, index) => (
+                                {dailyWeatherData.map((item, index) => (
                                     <View key={index} style={styles.forecastItem}>
                                         <Text style={styles.forecastDate}>{new Date(item.dt * 1000).toLocaleDateString()}</Text>
                                         <Text style={styles.forecastTemp}>{Math.round(item.main.temp)}°C</Text>
