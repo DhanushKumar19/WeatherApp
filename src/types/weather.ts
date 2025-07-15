@@ -1,26 +1,34 @@
+export interface Coords {
+    lon: number;
+    lat: number;
+}
+
+export interface WeatherDescription {
+    id: number;
+    main: string;
+    description: string;
+    icon: string;
+}
+
+export interface MainWeather {
+    temp: number;
+    temp_min: number;
+    temp_max: number;
+    feels_like?: number;
+    pressure?: number;
+    humidity?: number;
+}
+
+export interface Wind {
+    speed: number;
+    deg: number;
+}
+
 export interface WeatherData {
-    coord: {
-        lon: number;
-        lat: number;
-    };
-    weather: Array<{
-        id: number;
-        main: string;
-        description: string;
-        icon: string;
-    }>;
-    main: {
-        temp: number;
-        feels_like: number;
-        temp_min: number;
-        temp_max: number;
-        pressure: number;
-        humidity: number;
-    };
-    wind: {
-        speed: number;
-        deg: number;
-    };
+    coord: Coords;
+    weather: WeatherDescription[];
+    main: MainWeather & { feels_like: number; pressure: number; humidity: number };
+    wind: Wind;
     name: string;
     sys: {
         country: string;
@@ -29,32 +37,20 @@ export interface WeatherData {
     id: number;
 }
 
+export interface ForecastListItem {
+    dt: number;
+    main: MainWeather;
+    weather: WeatherDescription[];
+    dt_txt: string; // Date and time of the forecast
+}
+
 export interface ForecastData {
-    list: Array<{
-        dt: number;
-        main: {
-            temp: number;
-            temp_min: number;
-            temp_max: number;
-        };
-        weather: Array<{
-            id: number;
-            main: string;
-            description: string;
-            icon: string;
-        }>;
-        dt_txt: string; // Date and time of the forecast
-    }>;
+    list: ForecastListItem[];
     city: {
         id: number;
         name: string;
         country: string;
     };
-}
-
-export interface Coords {
-    lat: number;
-    lon: number;
 }
 
 export interface Location extends Coords {
