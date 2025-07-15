@@ -45,7 +45,6 @@ const RootStack = () => {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        initialParams={{ location: 'Karur' }}
         options={({ navigation }) => ({
           title: 'Weather App',
           headerTitleAlign: 'center',
