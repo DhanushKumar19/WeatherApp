@@ -1,4 +1,4 @@
-import { View, Text, TextInput, StyleSheet, ScrollView, useAnimatedValue, Animated, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, useAnimatedValue, Animated, TouchableOpacity, Alert } from 'react-native';
 import { RootStackParamList } from '../../App';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ForecastData, WeatherData } from '../types/weather';
@@ -136,14 +136,6 @@ export const HomeScreen: React.FC<Props> = ({ route }) => {
         setLocationError(null);
         await loadCurrentLocationWeather();
     }, []);
-
-    const handleOpenLocationSettings = () => {
-        if (Platform.OS === 'android') {
-            Linking.openSettings();
-        } else {
-            Linking.openURL('App-Prefs:root=Privacy&path=LOCATION');
-        }
-    };
 
     // Animation for fade-in effect
     useEffect(() => {
