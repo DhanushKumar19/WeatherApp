@@ -15,6 +15,7 @@ import { FavoritesScreen } from './src/screens/FavoritesScreen';
 import { Provider, useDispatch } from 'react-redux';
 import { AppDispatch, store } from './src/store';
 import { loadFavorites } from './src/store/favoriteSlice';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 export type RootStackParamList = {
   Home: { location: string } | undefined;
@@ -61,13 +62,14 @@ const RootStack = () => {
 }
 
 function App() {
-  // TODO: Handle Error boundary
   return (
-    <Provider store={store}>
-      <NavigationContainer>
-        <RootStack />
-      </NavigationContainer>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <NavigationContainer>
+          <RootStack />
+        </NavigationContainer>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 const styles = StyleSheet.create({
