@@ -1,97 +1,131 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Weather App
 
-# Getting Started
+A cross-platform React Native application that provides real-time weather information, location-based forecasts, and a favorites system. Built with modern state management, native modules, and a clean, user-friendly UI.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Overview
 
-## Step 1: Start Metro
+Weather App allows users to:
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- View current weather and 2-day forecasts for their location or any searched city.
+- Save favorite locations for quick access.
+- Handle location permissions and errors gracefully.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Features
 
-```sh
-# Using npm
-npm start
+- **Current Weather:** Fetches weather data for the user's current location using native module.
+- **Search:** Search for weather in any city.
+- **2-Day Forecast:** Displays a concise forecast grid.
+- **Favorites:** Add/remove favorite locations, persisted with Redux and AsyncStorage.
+- **Location Permissions:** Robust handling of permission denial and location service status.
+- **Animated UI:** Fade-in effects for weather cards.
+- **Error Handling:** User-friendly alerts and actionable error screens.
 
-# OR using Yarn
-yarn start
+## Technical Implementation
+
+### Core Technologies
+
+- **React Native 0.80+**
+- **Redux Toolkit** for state management
+- **AsyncStorage** for persistence
+- **TypeScript** for type safety
+- **Custom Native Module:** Kotlin and Swift based location provider with permission/service checks and timeout handling
+- **Weather API Integration:** Fetches data from a weather API (e.g., OpenWeatherMap) via a service layer
+
+### Advanced Features
+
+- **Native Location Module:**
+  - Written in Kotlin and Swift, exposes location data to JS via a Promise-based bridge.
+  - Handles permission checks, service status, and timeouts.
+- **DRY TypeScript Models:**
+  - Shared interfaces for weather, forecast, and location data.
+- **Animated Weather Cards:**
+  - Uses React Native's Animated API for smooth transitions.
+- **Error UI:**
+  - Detects and displays actionable messages for permission/service errors.
+
+## Prerequisites
+
+- Node.js & npm
+- Android Studio (for Android)
+- Xcode & CocoaPods (for iOS)
+
+## Setup Instructions
+
+1. **Install dependencies:**
+
+   ```sh
+   npm install
+   ```
+
+2. **Android Setup:**
+
+   - Open the `android` folder in Android Studio and build/run the app.
+
+3. **iOS Setup:**
+
+   - Install CocoaPods if not present.
+   - Run:
+     ```sh
+     cd ios
+     pod install
+     cd ..
+     npx react-native run-ios
+     ```
+
+4. **API Key Configuration:**
+   - Add your weather API key to a `.env` file.
+   - Example `.env`:
+     ```env
+     OPEN_WEATHER_API_KEY=your_api_key_here
+     ```
+
+## Native Module Support
+
+- **Android:** Custom location module written in Kotlin (see `android/app/src/java/com/weatherapp/LocationModule.kt`).
+- **iOS:** Location support via Swift (see `ios/WeatherApp/LocationModule.swift`).
+
+## Screenshots
+
+| Home Screen - Current Location | Home Screen - Added to Favorite | Home Screen - Search | Detailed Weather | Home Screen - Favorites |
+| ----------------------------- | ------------------------------- | ---------------- | ---------------------- | -------------------- |
+| ![Current Location](screenshots/1.jpg) | ![Add Favorites](screenshots/2.jpg) | ![Search](screenshots/5.jpg) | ![Detailed Weather](screenshots/3.jpg) | ![Favorites](screenshots/4.jpg) |
+
+## Project Structure
+
+```
+WeatherApp/
+├── App.tsx
+├── src/
+│   ├── components/
+│   │   └── DetailedWeatherModal.tsx
+│   ├── native/
+│   │   └── LocationModule.ts
+│   ├── screens/
+│   │   ├── HomeScreen.tsx
+│   │   └── FavoritesScreen.tsx
+│   ├── services/
+│   │   └── weatherAPI.ts
+│   ├── store/
+│   │   ├── favoriteSlice.ts
+│   │   └── index.ts
+│   ├── types/
+│   │   └── weather.ts
+│   └── utils/
+│       └── networkUtils.ts
+├── android/
+│   └── app/src/main/java/com/weatherapp/LocationModule.kt
+├── ios/
+│   └── WeatherApp/
+│       └── LocationModule.swift
+├── package.json
+├── README.md
+└── ...
 ```
 
-## Step 2: Build and run your app
+## API Integration
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- **OpenWeatherMap API**: Current weather and 5-day forecast
+- **Endpoints**:
+- current: `api.openweathermap.org/data/2.5/weather`
+- forecast: `api.openweathermap.org/data/2.5/forecast`
+- **Authetication**: API key required
