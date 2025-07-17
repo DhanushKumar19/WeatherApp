@@ -86,9 +86,15 @@ Weather App allows users to:
 
 ## Screenshots
 
-| Home Screen - Current Location | Home Screen - Added to Favorite | Home Screen - Search | Detailed Weather | Home Screen - Favorites |
+| Home Screen - Location Access | Home Screen - Current Location Weather | Home Screen - Add to favorites | Home Screen - Added to favorites | Home Screen - Detailed Weather |
 | ----------------------------- | ------------------------------- | ---------------- | ---------------------- | -------------------- |
-| ![Current Location](screenshots/1.jpg) | ![Add Favorites](screenshots/2.jpg) | ![Search](screenshots/5.jpg) | ![Detailed Weather](screenshots/3.jpg) | ![Favorites](screenshots/4.jpg) |
+| ![Location Access](screenshots/01.jpg) | ![Current Location Weather](screenshots/02.jpg) | ![Add to favorites](screenshots/03.jpg) | ![Added to favorites](screenshots/04.jpg) | ![Detailed Weather](screenshots/05.jpg) |
+
+| Favorites | Remove from Favorites | Removed from Favorites | Search | Error - when location is disabled |
+| ----------------------------- | ------------------------------- | ---------------- | ---------------------- | -------------------- |
+| ![Favorites](screenshots/06.jpg) | ![Remove from Favorites](screenshots/07.jpg) | ![Removed from Favorites](screenshots/08.jpg) | ![Search](screenshots/09.jpg) | ![Error - when location is disabled](screenshots/10.jpg) |
+| Error - when network is disabled |
+| ![Error - when network is disabled](screenshots/11.jpg) |
 
 ## Project Structure
 
