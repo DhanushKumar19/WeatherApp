@@ -1,4 +1,5 @@
-import { View, Text, TextInput, StyleSheet, ScrollView, useAnimatedValue, Animated, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, useAnimatedValue, Animated, Alert } from 'react-native';
+import React from 'react';
 import { RootStackParamList } from '../../App';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ForecastData, WeatherData } from '../types/weather';
@@ -8,6 +9,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
 import { addFavorite, saveFavorites } from '../store/favoriteSlice';
 import LocationModule from '../native/LocationModule';
+import SearchBar from '../components/SearchBar';
+import LocationErrorView from '../components/LocationErrorView';
+import WeatherCard from '../components/WeatherCard';
+import ForecastGrid from '../components/ForecastGrid';
 
 const DetailedWeatherModal = lazy(() => import('../components/DetailedWeatherModal'));
 
@@ -159,78 +164,34 @@ export const HomeScreen: React.FC<Props> = ({ route }) => {
 
     return (
         <ScrollView style={styles.container}>
-            <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Enter city"
-                    value={searchLocation}
-                    onChangeText={setSearchLocation}
-                    onSubmitEditing={handleSearch}
-                />
-                <TouchableOpacity
-                    style={styles.searchButton}
-                    onPress={handleSearch}
-                >
-                    <Text style={styles.searchButtonText}>Search</Text>
-                </TouchableOpacity>
-            </View>
+            <SearchBar
+                searchLocation={searchLocation}
+                setSearchLocation={setSearchLocation}
+                handleSearch={handleSearch}
+            />
 
             {loading ? (
                 <Text>Loading...</Text>
             ) : searching ? (
                 <Text>Searching...</Text>
             ) : locationError && !searchLocation ? (
-                <View style={styles.locationErrorContainer}>
-                    <Text style={styles.locationErrorText}>{locationError}</Text>
-                    {locationError.toLowerCase().includes('permission') && (
-                        <TouchableOpacity style={styles.searchButton} onPress={handleRequestLocationPermission}>
-                            <Text style={styles.searchButtonText}>Request Location Permission</Text>
-                        </TouchableOpacity>
-                    )}
-                    <TouchableOpacity
-                        style={[styles.searchButton, { marginTop: 10 }]}
-                        onPress={loadCurrentLocationWeather}>
-                        <Text style={styles.searchButtonText}>Refresh</Text>
-                    </TouchableOpacity>
-                </View>
+                <LocationErrorView
+                    locationError={locationError}
+                    handleRequestLocationPermission={handleRequestLocationPermission}
+                    handleRefresh={loadCurrentLocationWeather}
+                />
             ) : (
                 <View>
                     {currentWeather && (
-                        <Animated.View style={[styles.weatherContainer, { opacity: fadeAnim }]}>
-                            <TouchableOpacity onPress={() => setModalVisible(true)}>
-                                <Text style={styles.weatherCity}>{currentWeather.name}</Text>
-                                <Text style={styles.weatherTemp} >{Math.round(currentWeather.main.temp)}°C</Text>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.favoritesButton,
-                                        isFavorite(currentWeather.id) && { backgroundColor: 'gray' }
-                                    ]}
-                                    onPress={handleAddToFavorites}
-                                    disabled={isFavorite(currentWeather.id)}
-                                >
-                                    <Text style={styles.favoritesButtonText}>
-                                        {isFavorite(currentWeather.id)
-                                            ? 'Added to Favorites'
-                                            : 'Add to Favorites'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </TouchableOpacity>
-                        </Animated.View>
+                        <WeatherCard
+                            currentWeather={currentWeather}
+                            fadeAnim={fadeAnim}
+                            setModalVisible={setModalVisible}
+                            isFavorite={isFavorite}
+                            handleAddToFavorites={handleAddToFavorites}
+                        />
                     )}
-                    {dailyWeatherData.length > 0 && (
-                        <View style={styles.forecastContainer}>
-                            <Text style={styles.forecastTitle}>2-Day Forecast</Text>
-                            <View style={styles.forecastGrid}>
-                                {dailyWeatherData.map((item, index) => (
-                                    <View key={index} style={styles.forecastItem}>
-                                        <Text style={styles.forecastDate}>{new Date(item.dt * 1000).toLocaleDateString()}</Text>
-                                        <Text style={styles.forecastTemp}>{Math.round(item.main.temp)}°C</Text>
-                                        <Text style={styles.forecastDesc}>{item.weather[0].description}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
-                    )}
+                    <ForecastGrid dailyWeatherData={dailyWeatherData} />
                     <Suspense fallback={<Text>Loading...</Text>}>
                         <DetailedWeatherModal
                             visible={modalVisible}
@@ -249,100 +210,5 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'whitesmoke',
         padding: 20,
-    },
-    searchContainer: {
-        flexDirection: 'row',
-        marginBottom: 20,
-    },
-    searchInput: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: 'gray',
-        borderRadius: 8,
-        padding: 10,
-        marginRight: 10,
-    },
-    searchButton: {
-        backgroundColor: 'royalblue',
-        color: 'white',
-        padding: 12,
-        borderRadius: 8,
-        justifyContent: 'center',
-    },
-    searchButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    weatherContainer: {
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 12,
-        marginBottom: 20,
-        alignItems: 'center',
-    },
-    weatherCity: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-    weatherTemp: {
-        fontSize: 18,
-        marginBottom: 10,
-    },
-    favoritesButton: {
-        backgroundColor: 'royalblue',
-        padding: 10,
-        borderRadius: 8,
-        marginTop: 10,
-    },
-    favoritesButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    forecastContainer: {
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 12,
-    },
-    forecastTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-    },
-    forecastGrid: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    forecastItem: {
-        flex: 1,
-        alignItems: 'center',
-        padding: 10,
-        marginHorizontal: 5,
-        backgroundColor: 'lightgray',
-        borderRadius: 8,
-    },
-    forecastDate: {
-        fontSize: 12,
-        marginBottom: 5,
-    },
-    forecastTemp: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    forecastDesc: {
-        fontSize: 10,
-        textAlign: 'center',
-        textTransform: 'capitalize',
-    },
-    locationErrorText: {
-        color: 'red',
-        marginBottom: 16,
-    },
-    locationErrorContainer: {
-        alignItems: 'center',
-        marginTop: 40,
     }
 });
