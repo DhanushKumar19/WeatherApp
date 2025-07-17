@@ -33,21 +33,36 @@ Weather App allows users to:
 
 ### Advanced Features
 
-- **Native Location Module:**
-  - Written in Kotlin and Swift, exposes location data to JS via a Promise-based bridge.
-  - Handles permission checks, service status, and timeouts.
-- **DRY TypeScript Models:**
-  - Shared interfaces for weather, forecast, and location data.
-- **Animated Weather Cards:**
-  - Uses React Native's Animated API for smooth transitions.
-- **Error UI:**
-  - Detects and displays actionable messages for permission/service errors.
+- **Native Modules & Bridge**
+  - Native bridfe module using traditional architecture
+  - iOS: CoreLocation integration with swift
+  - Android: LocationManager integrationn with Kotlin
+  - Javascript integration with fallback implementation
 
-## Prerequisites
+- **Hermes Engine**
+  - Enabled in `android/app/build.gradle` and `ios/Podfile`
+  - Optimizes startup time and memory usage on both platforms
+  - Imrpoves JavaScript execution performance  
 
-- Node.js & npm
-- Android Studio (for Android)
-- Xcode & CocoaPods (for iOS)
+- **Code Splitting & Lazy Loading**
+  - Weather modal component lazy loaded with `React.lazy`
+  - Wrapped in `Suspense` for loading states
+  - Improves initial bundle size
+
+- **Hooks Implementation**
+  - `useState` for search input and weather data
+  - `useEffect` for API calls 
+  - `useCallback` for performance optimation
+
+- **Redux Architecture**
+  - Centralized state management for favorites
+  - AsyncStorage persistence with Redux Thunk
+  - Type-safe actions and reducers
+
+- **Flexbox Layout**
+  - Responsive design using flexbox
+  - Grid layout for forecast display
+  - Adaptive UI for different screen sizes
 
 ## Setup Instructions
 
@@ -59,7 +74,10 @@ Weather App allows users to:
 
 2. **Android Setup:**
 
-   - Open the `android` folder in Android Studio and build/run the app.
+   - Open the `android` folder in Android Studio and build/run the app. (or)
+   ```bash
+   npm run android
+   ```
 
 3. **iOS Setup:**
 
@@ -69,7 +87,7 @@ Weather App allows users to:
      cd ios
      pod install
      cd ..
-     npx react-native run-ios
+     npm run ios
      ```
 
 4. **API Key Configuration:**
@@ -135,3 +153,7 @@ WeatherApp/
 - current: `api.openweathermap.org/data/2.5/weather`
 - forecast: `api.openweathermap.org/data/2.5/forecast`
 - **Authetication**: API key required
+
+## Future Enhancements
+- Handle dark mode support
+- Add unit/UI tests
